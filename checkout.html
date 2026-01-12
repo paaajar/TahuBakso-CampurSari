@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - Tahu Bakso CS</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <a href="index.html" class="logo">
+          <img src="https://api.builder.io/api/v1/image/assets/TEMP/e96d3d679ec9de37b75ee77978eda43048a2b37c?width=190" alt="Tahu Bakso CS Logo" class="logo-img">
+          <span class="logo-text">Tahu Bakso CS</span>
+        </a>
+        <nav class="nav">
+          <a href="index.html" class="nav-link">Kembali ke Menu</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <section class="checkout-section">
+    <div class="container">
+      <!-- Back Button for Mobile -->
+      <button id="back-btn-mobile" class="back-btn-mobile">← Kembali ke Menu</button>
+      <h2>Keranjang Belanja</h2>
+      <table id="cart-table">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Nama Pesanan</th>
+            <th>Harga</th>
+            <th>Jumlah</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="cart-body">
+          <!-- Items will be populated by JavaScript -->
+        </tbody>
+      </table>
+      <div class="total-section">
+        <p id="total-price">Total: Rp 0</p>
+      </div>
+      <button id="pay-btn" class="btn-primary">Bayar</button>
+      <div id="qr-modal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <h3>Scan QR untuk Pembayaran</h3>
+          <img src="qris.jpeg" alt="QR Code Pembayaran" style="width: auto; height: auto;">
+          <p style="margin-top: 1rem;">Silakan lakukan pembayaran sebesar <span id="total-amount"></span> melalui QR Code di atas. Kirim bukti pembayaran ke WhatsApp dibawah</p>
+          <button style="margin-top: 1rem;" id="send-order-btn" class="btn-primary">Kirim Pesanan</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Load cart from localStorage
+    function loadCart() {
+      const cart = JSON.parse(localStorage.getItem('cart')) || [];
+      const cartBody = document.getElementById('cart-body');
+      const totalPriceEl = document.getElementById('total-price');
+      let total = 0;
+      cartBody.innerHTML = '';
+      cart.forEach((item, index) => {
+        const row = document.createElement('tr');
+        const itemTotal = item.price * item.quantity;
+        total += itemTotal;
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${item.name}</td>
+          <td>Rp ${item.price.toLocaleString('id-ID')}</td>
+          <td>
+            <button class="qty-btn minus" data-index="${index}">-</button>
+            <span class="qty">${item.quantity}</span>
+            <button class="qty-btn plus" data-index="${index}">+</button>
+          </td>
+          <td>Rp ${itemTotal.toLocaleString('id-ID')}</td>
+        `;
+        cartBody.appendChild(row);
+      });
+      totalPriceEl.textContent = `Total: Rp ${total.toLocaleString('id-ID')}`;
+    }
+
+    // Update quantity
+    function updateQuantity(index, change) {
+      const cart = JSON.parse(localStorage.getItem('cart')) || [];
+      if (cart[index]) {
+        cart[index].quantity += change;
+        if (cart[index].quantity <= 0) {
+          cart.splice(index, 1); // Remove if quantity 0
+        }
+        localStorage.setItem('cart', JSON.stringify(cart));
+        loadCart(); // Reload cart
+      }
+    }
+
+    // Pay button event
+    document.getElementById('pay-btn').addEventListener('click', function() {
+      const cart = JSON.parse(localStorage.getItem('cart')) || [];
+      let total = 0;
+      cart.forEach(item => {
+        total += item.price * item.quantity;
+      });
+      document.getElementById('total-amount').textContent = 'Rp ' + total.toLocaleString('id-ID');
+      document.getElementById('qr-modal').style.display = 'block';
+    });
+
+    // Send order to WhatsApp
+    document.getElementById('send-order-btn').addEventListener('click', function() {
+      const cart = JSON.parse(localStorage.getItem('cart')) || [];
+      let message = 'Halo, saya ingin memesan:\n\n';
+      cart.forEach((item, index) => {
+        message += `${index + 1}. ${item.name} x ${item.quantity} - Rp ${(item.price * item.quantity).toLocaleString('id-ID')}\n`;
+      });
+      const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      message += `\nTotal: Rp ${total.toLocaleString('id-ID')}\n\nTerima kasih!`;
+      const phone = '6285156249042'; // Ganti dengan nomor admin
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank');
+    });
+
+    // Close modal
+    document.querySelector('.close').addEventListener('click', function() {
+      document.getElementById('qr-modal').style.display = 'none';
+    });
+
+    // Click outside modal to close
+    window.addEventListener('click', function(event) {
+      const modal = document.getElementById('qr-modal');
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+
+    // Quantity buttons
+    document.addEventListener('click', function(event) {
+      if (event.target.classList.contains('qty-btn')) {
+        const index = parseInt(event.target.getAttribute('data-index'));
+        const change = event.target.classList.contains('plus') ? 1 : -1;
+        updateQuantity(index, change);
+      }
+    });
+
+    // Back button mobile
+    document.getElementById('back-btn-mobile').addEventListener('click', function() {
+      window.location.href = 'index.html';
+    });
+
+    // Load cart on page load
+    loadCart();
+  </script>
+</body>
+</html></content>
